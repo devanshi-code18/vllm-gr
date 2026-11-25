@@ -20,6 +20,7 @@ nav:
     - Beam guides:
       - user_guide/onerec_quickstart.md
       - user_guide/beam_search_npu.md
+      - user_guide/batch_invariant_beam.md
     - Features & Compatibility: user_guide/feature_compatibility.md
     - Configuration:
       - configuration/README.md

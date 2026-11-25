@@ -8,6 +8,7 @@ then run the [OneRec quickstart](../getting_started/quickstart.md).
 | I want to | Guide |
 | --- | --- |
 | Check which features apply to my device | [Features and compatibility](feature_compatibility.md) |
+| Get the same Beam results alone and in any batch on CUDA | [Batch-invariant Beam search](batch_invariant_beam.md) |
 | Configure Beam width, candidate selection, or a constraint table | [Configuration](../configuration/README.md) |
 | Build a catalog artifact and select a Trie per request | [Constraint tables](../configuration/constraint_tables.md) |
 | Start a server and send a request | [Serving APIs](../serving/README.md) |

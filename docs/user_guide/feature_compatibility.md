@@ -20,6 +20,7 @@ The matrix describes the documented runtime paths and their configuration limits
 | Beam Decode graphs | Supported (`gr.beam_graph_enabled`) | FULL replay requires fused xllm Decode and an eligible batch matching a captured batch size and Decode input width. | [CUDA ModelRunner V2](../design/module/model_runner_v2.md), [Ascend capture and fallback](../design/feature/npu_decode_execution.md#decode-graph-capture) |
 | Prefill graphs | Supported; explicit capture configuration | Opt-in BSND Prefill graphs | [Prefill capture](../design/feature/cuda_prefill_graph.md), [BSND Prefill](../design/feature/npu_prefill_bsnd.md) |
 | Asynchronous scheduling | Supported | Supported | [Configuration](../configuration/README.md#asynchronous-scheduling), [CUDA walkthrough](onerec_quickstart.md), [Ascend example](beam_search_npu.md#configuration-and-python-entry-point) |
+| Batch-invariant Beam (`VLLM_BATCH_INVARIANT=1`) | Supported; validated by a system test | Not validated | [Batch-invariant Beam search](batch_invariant_beam.md) |
 | Multi-Trie selection per request | Supported | Supported | [Constraint tables](../configuration/constraint_tables.md) |
 | gRPC transport | Experimental, requires the `grpc` extra | Ascend-specific validation remains to be documented | [gRPC token inputs and CUDA example](../serving/grpc.md) |
 | Checkpoint updates on running instances | Supported with a drained instance | Supported with a drained instance | [Model and catalog updates](weight_update.md) |
