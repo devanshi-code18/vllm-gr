@@ -7,6 +7,7 @@ from typing import Any
 
 import torch
 
+from vllm_gr.ops.cuda.decode_binding import bind_decode_inputs_cuda
 from vllm_gr.v1.attention.backends.beam_attn_metadata_layout import (
     build_async_batch_layout,
 )
@@ -174,11 +175,41 @@ def bind_device_inputs(prepared: PreparedGRInputs, owner: Any) -> None:
         raise ValueError(
             "Asynchronous scheduling prepared inputs belong to a different execution owner"
         )
-    state = owner.beam.state
-    rows = owner.state_rows
     step = m.decode_step
     if step is None:
         raise ValueError("Asynchronous scheduling device binding requires Decode metadata")
+    width = BeamBatchExecutionView.from_stage_metadata(m).input_width
+    state = owner.beam.state
+    if bind_decode_inputs_cuda(
+        state_rows=owner.state_rows,
+        is_initialized=state.is_initialized,
+        is_finished=state.is_finished,
+        error_code=state.error_code,
+        num_generated_tokens=state.num_generated_tokens,
+        num_decode_steps=state.num_decode_steps,
+        active_mask=state.active_mask,
+        state_input_ids=state.input_ids,
+        sequence=state.sequence,
+        device_positions=owner.device_positions,
+        out_execution_mask=owner.execution_mask,
+        out_input_ids=owner.input_ids,
+        out_positions=owner.positions,
+        out_decode_step=owner.beam.session.context.decode_step_buf,
+        out_prefixes=owner.prefixes,
+        out_suffix_lengths=owner.metadata.suffix_seqlens_kv_device,
+        out_suffix_cu=owner.metadata.suffix_cu_seqlens_k_device,
+        width=width,
+        step=step,
+        dispatch_error=ERROR_DISPATCH_STATE,
+    ):
+        return
+    bind_device_inputs_eager(owner, step, width)
+
+
+def bind_device_inputs_eager(owner: Any, step: int, width: int) -> None:
+    """Reference composition of the fused binding; used when a layout is unsupported."""
+    state = owner.beam.state
+    rows = owner.state_rows
     initialized, finished = state.is_initialized[rows], state.is_finished[rows]
     error = state.error_code[rows]
     count, actual_step = state.num_generated_tokens[rows], state.num_decode_steps[rows]
@@ -188,7 +219,6 @@ def bind_device_inputs(prepared: PreparedGRInputs, owner: Any) -> None:
     dispatch_error = torch.where(mismatch, ERROR_DISPATCH_STATE, error)
     state.error_code[rows] = dispatch_error
     running = initialized & ~finished & (dispatch_error == 0)
-    width = BeamBatchExecutionView.from_stage_metadata(m).input_width
     mask = running[:, None] & state.active_mask[rows, :width]
     flat_mask = mask.reshape(-1)
     owner.execution_mask.copy_(flat_mask)
